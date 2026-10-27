@@ -1,0 +1,25 @@
+rule_files:
+  - alerts.yml
+evaluation_interval: 1m
+tests:
+  - interval: 1m
+    input_series:
+      - series: 'up{job="coursesphere",instance="backend_a:5000"}'
+        values: '1 1 1 1'
+      - series: 'up{job="coursesphere",instance="backend_b:5000"}'
+        values: '0 0 0 0'
+    alert_rule_test:
+      - eval_time: 1m
+        alertname: CourseSphereBackendDown
+        exp_alerts: []
+      - eval_time: 2m
+        alertname: CourseSphereBackendDown
+        exp_alerts:
+          - exp_labels:
+              alertname: CourseSphereBackendDown
+              instance: backend_b:5000
+              job: coursesphere
+              severity: warning
+            exp_annotations:
+              summary: CourseSphere backend instance is unavailable
+              description: Inspect readiness, gateway upstream status and logs for the affected instance.

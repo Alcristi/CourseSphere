@@ -1,0 +1,8 @@
+# Use only with credentials of an isolated Firebase/OpenAI/Pinecone test project.
+services:
+  backend_a:
+    env_file:
+      - ./backend/.env.test
+  backend_b:
+    env_file:
+      - ./backend/.env.test
