@@ -35,7 +35,7 @@ const MajorSelection = (props: {majors: string[], setMajors: Function}) => {
       options={majorOptions}
       getOptionLabel={(option) => option}
       value={majors}
-      onChange={(event, newValue: string[]) => {
+      onChange={(_event, newValue: string[]) => {
         setMajors(newValue);
       }}
       renderTags={(value, getTagProps) =>
@@ -69,7 +69,7 @@ const MinorSelection = (props: {minors: string[], setMinors: Function}) => {
       options={minorOptions}
       getOptionLabel={(option) => option}
       value={minors}
-      onChange={(event, newValue: string[]) => {
+      onChange={(_event, newValue: string[]) => {
         setMinors(newValue);
       }}
       renderTags={(value, getTagProps) =>
@@ -109,9 +109,9 @@ const YearSelection = (props: {year: string, setYear: Function}) => {
     <Autocomplete
       className="selector"
       id = "year-output"
-      disablePortal 
+      disablePortal
       value = {year}
-      onChange = {(event, newValue) => {
+      onChange = {(_event, newValue) => {
         setYear(newValue)
       }}
       options={yearOptions}
@@ -128,7 +128,7 @@ const CollegeSelection = (props: {college: string, setCollege: Function}) => {
       className="selector"
       id = "college-output"
       value = {college}
-      onChange = {(event, newValue) => {
+      onChange = {(_event, newValue) => {
         setCollege(newValue)
       }}
       disablePortal
@@ -186,7 +186,7 @@ const CoursesInput = (props: {courses: string[], setCourses: Function}) => {
             options={allCornellCourses}
             value={course}
             id = "courses-output"
-            onChange={(event: any, newValue: string | null) => {
+            onChange={(_event: any, newValue: string | null) => {
               if (newValue) {
                 setCourse(newValue);
                 const newSet:string[] = Array.from(courses);
@@ -216,11 +216,11 @@ const CoursesInput = (props: {courses: string[], setCourses: Function}) => {
   );
 };
 
-const TellMeAboutYourself = (props: {about: string, setCourses: Function}) => {
+const TellMeAboutYourself = (props: {about: string, setAbout: (value: string) => void}) => {
   return (
     <Grid item xs={12}>
       <Typography variant="h6">Tell me about yourself</Typography>
-      <Typography 
+      <Typography
       variant="body2" sx={{ marginBottom: 2 }}>
         This will be used to create a personalized experience. Our model will
         extract relevant insights from this text to steer our AI to make more
@@ -230,6 +230,8 @@ const TellMeAboutYourself = (props: {about: string, setCourses: Function}) => {
       </Typography>
       <TextField
         id = "info-output"
+        value={props.about}
+        onChange={(event) => props.setAbout(event.target.value)}
         multiline
         fullWidth
         rows={4}
@@ -268,8 +270,8 @@ const Dashboard = () => {
         setAbout,
       )
     }, [])
-  
-    
+
+
 
   return (
     <div className="dashboard">

@@ -10,7 +10,7 @@ interface ProfessorCardProps {
   email: string;
   phone: string;
   education: string;
-  reviews: string[]; 
+  reviews: string[];
 }
 
 interface CourseCardProps {
@@ -79,8 +79,8 @@ type Recommendation = CourseRecommendation | ProfessorRecommendation;
 type Content = string | { botResponse: string; newRecommendations: (CourseRecommendation | ProfessorRecommendation)[] };
 
 interface Message {
-  sender: string;
-  content: Content;
-  messageID: Promise<string | undefined>;
+  sender: "user" | "assistant";
+  content: string;
+  messageID: string;
   timestamp: string;
 }

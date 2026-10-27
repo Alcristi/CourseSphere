@@ -1,17 +1,15 @@
 import $ from 'jquery';
 import firebaseConfig from "./firebaseConfig";
 import { FirebaseApp, initializeApp } from "firebase/app";
-import { Database, getDatabase, set } from "firebase/database";
 import { Auth, getAuth, onAuthStateChanged, signInWithEmailAndPassword } from "firebase/auth";
 import { toast } from "react-toastify";
 
 const app: FirebaseApp = initializeApp(firebaseConfig);
-const database: Database = getDatabase(app);
-const auth: Auth = getAuth();
+const auth: Auth = getAuth(app);
 
 
 async function createUser (email: string, password: string) {
-  const response = await fetch('http://127.0.0.1:5000/users/create', {
+  const response = await fetch('/users/create', {
     method: 'POST',
     mode: "cors",
     headers: {
@@ -20,6 +18,7 @@ async function createUser (email: string, password: string) {
     body: JSON.stringify({email, password})
   });
   const json = await response.json();
+  if (!response.ok) throw new Error(json.error || `HTTP ${response.status}`);
   return json;
 }
 
@@ -39,7 +38,7 @@ function performSignup() {
       toast(`Sign up failed: ${e}`, {
         position: "top-right",
         hideProgressBar: true,
-        closeOnClick: true,   
+        closeOnClick: true,
         pauseOnHover: true,
         draggable: true,
         progress: undefined,
@@ -50,7 +49,7 @@ function performSignup() {
 
 /**
  * This function performs the user login transaction with firebase.
- * 
+ *
  */
 function performLogin() {
   const email: string = $("#login-email-input").val();
@@ -68,12 +67,12 @@ function performLogin() {
 
 /**
  * This function sets the profile information if the user is logged in.
- * 
- * @param setMajors 
- * @param setMinors 
- * @param setYear 
- * @param setCollege 
- * @param setCourses 
+ *
+ * @param setMajors
+ * @param setMinors
+ * @param setYear
+ * @param setCollege
+ * @param setCourses
  */
 function setProfileInfoIfLoggedIn(
   setMajors: Function,
@@ -90,10 +89,10 @@ function setProfileInfoIfLoggedIn(
     try {
       const idToken = await user.getIdToken();
       if (!active) return;
-      const response = await fetch(`http://127.0.0.1:5000/users/info?id_token=${idToken}`, {
+      const response = await fetch("/users/info", {
         method: "GET",
         headers: {
-            "Content-Type": "application/json"
+            "Authorization": `Bearer ${idToken}`
         }
       })
 
@@ -142,12 +141,12 @@ function setProfileInfoIfLoggedIn(
 }
 
 /**
- * This function saves any profile changes that occurs on the user dashboard. 
- * 
- * @param majors 
- * @param minors 
- * @param courses 
- * @returns 
+ * This function saves any profile changes that occurs on the user dashboard.
+ *
+ * @param majors
+ * @param minors
+ * @param courses
+ * @returns
  */
 async function saveProfileChanges (majors: string[], minors: string[], courses: string[]) {
   if (!ensureUserLoggedIn()) return;
@@ -155,7 +154,7 @@ async function saveProfileChanges (majors: string[], minors: string[], courses: 
   const about = $("#info-output").val()
   const year = $("#year-output").val()
   const college = $("#college-output").val()
-  const idToken = await user?.getIdToken(); // User won't be null due to the early return statement above, ignore the ?. 
+  const idToken = await user?.getIdToken(); // User won't be null due to the early return statement above, ignore the ?.
 
   const data = {
     majors: majors,
@@ -163,18 +162,19 @@ async function saveProfileChanges (majors: string[], minors: string[], courses: 
     year: year,
     college: college,
     courses: courses,
-    about: about,
-    id_token: idToken
+    about: about
   };
 
-  fetch("http://127.0.0.1:5000/users/info", {
+  fetch("/users/info", {
     method: "POST",
     headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${idToken}`,
     },
     body: JSON.stringify(data)
   })
-  .then(() => {
+  .then((response) => {
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     toast.success("Successfully saved your information!");
   })
   .catch((e: Error) => {
@@ -184,19 +184,20 @@ async function saveProfileChanges (majors: string[], minors: string[], courses: 
 
 
 /**
- * This functions sends the query, as well as the user id (if the user is logged in) to the backend and returns the response. 
- * 
- * @param query 
- * @returns 
+ * This functions sends the query, as well as the user id (if the user is logged in) to the backend and returns the response.
+ *
+ * @param query
+ * @returns
  */
 async function fetchCourseSphereResponse(query: string, history: { role: 'user' | 'assistant'; content: string }[] = []) {
   const user = auth.currentUser;
   const idToken = await user?.getIdToken();
-  const data = { query, id_token: idToken, history };
-  const response = await fetch("http://127.0.0.1:5000/users/query", {
+  const data = { query, history };
+  const response = await fetch("/users/query", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
     },
     body: JSON.stringify(data)
   });
@@ -221,19 +222,18 @@ function ensureUserLoggedIn(): boolean {
 
 
 async function saveCourseSphereChat(chatId: string, messages: Message[]) {
-  if (!await ensureUserLoggedIn()) return;
-  
+  if (!auth.currentUser) return;
+
   const user = auth.currentUser;
   const idToken = await user?.getIdToken();
 
-  const response = await fetch(`http://127.0.0.1:5000/chats/${chatId}/messages`, {
+  const response = await fetch(`/chats/${chatId}/messages`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${idToken}`
     },
     body: JSON.stringify({
-      id_token: idToken,
       messages: messages.map(message => ({
         sender: message.sender,
         content: message.content,
@@ -242,10 +242,10 @@ async function saveCourseSphereChat(chatId: string, messages: Message[]) {
       }))
     })
   });
-  
+
   const data = await response.json();
   if (!response.ok) {
-    alert(data.error || 'Error saving messages');
+    throw new Error(data.error || 'Error saving messages');
   }
 }
 
@@ -261,14 +261,14 @@ async function updateCourseSphereChat(chatId: string, messageId: string, updated
   const response = await fetch(`/chats/${chatId}/messages/${messageId}`, {
     method: 'PUT',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${idToken}`
     },
     body: JSON.stringify({
-      id_token: idToken,
       content: updatedContent
     })
   });
-  
+
   const data = await response.json();
   if (!response.ok) {
     alert(data.error);
@@ -287,7 +287,7 @@ async function deleteCourseSphereChat(chatId: string, messageId: string) {
       'Authorization': `Bearer ${idToken}`
     }
   });
-  
+
   const data = await response.json();
   if (!response.ok) {
     alert(data.error);
@@ -301,13 +301,13 @@ async function h(data: any): Promise<string | undefined> {
   const user = auth.currentUser;
   const idToken = await user?.getIdToken();
 
-  const response = await fetch("http://127.0.0.1:5000/hash", {
+  const response = await fetch("/hash", {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${idToken}`  
+      'Authorization': `Bearer ${idToken}`
     },
-    body: JSON.stringify(data)  
+    body: JSON.stringify(data)
   });
 
   if (!response.ok) {

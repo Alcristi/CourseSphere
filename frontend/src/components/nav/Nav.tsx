@@ -10,19 +10,15 @@ import {
   ListItemText,
   Toolbar,
   Typography,
-  Hidden,
-  useMediaQuery,
-  useTheme
+  Hidden
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import { Auth, getAuth, onAuthStateChanged } from 'firebase/auth';
 import { FirebaseApp, initializeApp } from 'firebase/app';
-import { Database, getDatabase } from 'firebase/database';
 import firebaseConfig from '../../firebaseConfig';
 
 const app: FirebaseApp = initializeApp(firebaseConfig);
-const database: Database = getDatabase(app);
-const auth: Auth = getAuth();
+const auth: Auth = getAuth(app);
 
 function NavLink(props: { text: string, path: string }) {
   return (
@@ -36,6 +32,7 @@ const NavLinks = ({ isLoggedIn }: { isLoggedIn: boolean }) => (
   <ButtonGroup variant="contained" color="inherit">
     <NavLink text="Home" path="/" />
     <NavLink text="Dashboard" path="/dashboard" />
+    {isLoggedIn && <NavLink text="My Courses" path="/my-courses" />}
     {!isLoggedIn ? (
       <NavLink text="Login" path="/login" />
     ) : (
@@ -74,6 +71,7 @@ export default function Nav() {
       <ListItem button onClick={() => window.location.href = '/dashboard'}>
         <ListItemText primary="Dashboard" />
       </ListItem>
+      {loggedIn && <ListItem button onClick={() => window.location.href = "/my-courses"}><ListItemText primary="My Courses" /></ListItem>}
       {!loggedIn ? (
         <ListItem button onClick={() => window.location.href = '/login'}>
           <ListItemText primary="Login" />
@@ -85,9 +83,6 @@ export default function Nav() {
       )}
     </List>
   );
-
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   return (
     <AppBar position="static">

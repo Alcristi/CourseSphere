@@ -51,7 +51,11 @@ def main() -> None:
                     section_id INTEGER,
                     semester TEXT,
                     department TEXT,
-                    instructor TEXT
+                    instructor TEXT,
+                    subject_code TEXT,
+                    catalog_level TEXT,
+                    estimated_description TEXT,
+                    description_basis TEXT
                 );
                 CREATE TABLE dataset_info (
                     source TEXT NOT NULL,

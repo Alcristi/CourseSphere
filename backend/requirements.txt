@@ -6,3 +6,5 @@ pandas
 fastembed
 pinecone
 python-dotenv
+gunicorn
+prometheus-client
