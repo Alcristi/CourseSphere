@@ -75,7 +75,7 @@ function performLogin() {
  * @param setCollege 
  * @param setCourses 
  */
-async function setProfileInfoIfLoggedIn(
+function setProfileInfoIfLoggedIn(
   setMajors: Function,
   setMinors: Function,
   setYear: Function,
@@ -83,11 +83,13 @@ async function setProfileInfoIfLoggedIn(
   setCourses: Function,
   setAbout: Function
 ){
-  onAuthStateChanged(auth, async (user) => {
-    if (!ensureUserLoggedIn()) return;
-    const idToken = await user?.getIdToken()
+  let active = true;
+  const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    if (!user) return;
 
     try {
+      const idToken = await user.getIdToken();
+      if (!active) return;
       const response = await fetch(`http://127.0.0.1:5000/users/info?id_token=${idToken}`, {
         method: "GET",
         headers: {
@@ -95,7 +97,11 @@ async function setProfileInfoIfLoggedIn(
         }
       })
 
-      const data = await response.json()
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || `HTTP ${response.status}`);
+      }
+      if (!active || !data) return;
 
       if (data["majors"]) {
         setMajors(data["majors"])
@@ -126,9 +132,13 @@ async function setProfileInfoIfLoggedIn(
 
     }
     catch (e) {
-      toast.error(`Failed to fetch data: ${e}`)
+      if (active) toast.error(`Failed to fetch data: ${e}`)
     }
-})
+  });
+  return () => {
+    active = false;
+    unsubscribe();
+  };
 }
 
 /**
@@ -179,35 +189,25 @@ async function saveProfileChanges (majors: string[], minors: string[], courses: 
  * @param query 
  * @returns 
  */
-async function fetchCourseSphereResponse(query: string) {
+async function fetchCourseSphereResponse(query: string, history: { role: 'user' | 'assistant'; content: string }[] = []) {
   const user = auth.currentUser;
-  const idToken = user?.getIdToken();
-  const data = { query, idToken };
+  const idToken = await user?.getIdToken();
+  const data = { query, id_token: idToken, history };
   const response = await fetch("http://127.0.0.1:5000/users/query", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      'Authorization': `Bearer ${idToken}`
     },
     body: JSON.stringify(data)
-  })
-  .then(response => response.json())
-  .then(result => {
-    toast.success("Successfully retrieved bot response!");
-    return {
-      botResponse: result.botResponse,
-      newRecommendations: result.newRecommendations || []
-    };
-  })
-  .catch((error: Error) => {
-    console.error("Failed to fetch bot response:", error);
-    toast.error(`Failed to fetch bot response: ${error.message}`);
-    return {
-      botResponse: `Failed to get bot response, most likely an Unsupported Query: echo "${query}", This is testing, in the future, it will simply return: "Unsupported Query"`,
-      newRecommendations: []
-    };
   });
-  return response;
+  const result = await response.json();
+  if (!response.ok) {
+    throw new Error(result.error || `HTTP ${response.status}`);
+  }
+  return {
+    botResponse: result.botResponse,
+    newRecommendations: result.newRecommendations || []
+  };
 }
 
 function ensureUserLoggedIn(): boolean {
@@ -226,7 +226,7 @@ async function saveCourseSphereChat(chatId: string, messages: Message[]) {
   const user = auth.currentUser;
   const idToken = await user?.getIdToken();
 
-  const response = await fetch(`/chats/${chatId}/messages`, {
+  const response = await fetch(`http://127.0.0.1:5000/chats/${chatId}/messages`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

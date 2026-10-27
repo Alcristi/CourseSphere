@@ -14,7 +14,12 @@ interface ProfessorCardProps {
 }
 
 interface CourseCardProps {
+  courseCode: string;
   name: string;
+  subjectCode: string;
+  catalogLevel: number | null;
+  estimatedDescription: string;
+  associatedProfessors: string[];
   type: string;
   sectionNumber: string;
   location: string;
@@ -29,8 +34,14 @@ interface CourseCardProps {
 interface CourseRecommendation {
   type: 'course';
   data: {
+    courseCode: string;
     name: string;
+    subjectCode: string;
+    catalogLevel: number | null;
+    estimatedDescription: string;
+    associatedProfessors: string[];
     type: string;
+    sectionNumber: string;
     location: string;
     days: string;
     time: string;
@@ -57,6 +68,7 @@ interface ProfessorRecommendation {
 
 
 interface Chat {
+  id: string;
   title: string;
   timestamp: string;
 }

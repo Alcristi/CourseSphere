@@ -1,10 +1,12 @@
-export default {
-  apiKey: "AIzaSyD_i3HIL4SYkf2AEmKWs2dunhq7m1Glbc4",
-  authDomain: "coursesphere-8bd9a.firebaseapp.com",
-  databaseURL: "https://coursesphere-8bd9a-default-rtdb.firebaseio.com",
-  projectId: "coursesphere-8bd9a",
-  storageBucket: "coursesphere-8bd9a.appspot.com",
-  messagingSenderId: "728789297654",
-  appId: "1:728789297654:web:6b699e8b5ebebc8a8d3fd7",
-  measurementId: "G-PM7PMGBE0R"
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
+
+export default firebaseConfig;

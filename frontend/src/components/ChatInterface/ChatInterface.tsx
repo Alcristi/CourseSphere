@@ -10,6 +10,7 @@ import './ChatInterface.scss';
 interface Response {
   user?: string;
   bot?: string;
+  recommendations?: (CourseRecommendation | ProfessorRecommendation)[];
 }
 
 
@@ -18,7 +19,6 @@ const BATCH_SIZE = 5;
 export default function ChatInterface() {
   const [query, setQuery] = useState<string>('');
   const [responses, setResponses] = useState<Response[]>([]);
-  const [recommendations, setRecommendations] = useState<(CourseRecommendation | ProfessorRecommendation)[]>([]);
   const [batch, setBatch] = useState<Message[]>([]);
   const chatWindowRef = useRef<HTMLDivElement>(null);
 
@@ -26,7 +26,7 @@ export default function ChatInterface() {
     if (chatWindowRef.current) {
       chatWindowRef.current.scrollTop = chatWindowRef.current.scrollHeight;
     }
-  }, [responses, recommendations]);
+  }, [responses]);
 
   useEffect(() => {
     const handleBeforeUnload = async () => {
@@ -54,7 +54,11 @@ export default function ChatInterface() {
     };
 
     try {
-      const { botResponse, newRecommendations } = await fetchCourseSphereResponse(query);
+      const history = responses.flatMap((response): { role: 'user' | 'assistant'; content: string }[] => [
+        ...(response.user ? [{ role: 'user' as const, content: response.user }] : []),
+        ...(response.bot ? [{ role: 'assistant' as const, content: response.bot }] : []),
+      ]);
+      const { botResponse, newRecommendations } = await fetchCourseSphereResponse(query, history);
       const botMessage: Message = {
         sender: 'bot',
         content: { botResponse, newRecommendations },
@@ -62,9 +66,8 @@ export default function ChatInterface() {
         timestamp: new Date().toISOString(),
       };
 
-      const updatedResponses: Response[] = [...newResponses, { bot: botResponse }];
+      const updatedResponses: Response[] = [...newResponses, { bot: botResponse, recommendations: newRecommendations }];
       setResponses(updatedResponses);
-      setRecommendations(newRecommendations);
 
       const newBatch = [...batch, userMessage, botMessage];
       setBatch(newBatch);
@@ -76,6 +79,8 @@ export default function ChatInterface() {
       }
     } catch (error) {
       console.error('Error fetching bot response:', error);
+      const message = error instanceof Error ? error.message : String(error);
+      setResponses([...newResponses, { bot: `Search failed: ${message}` }]);
     }
     setQuery('');
   };
@@ -127,7 +132,7 @@ export default function ChatInterface() {
                 </Box>
               </Box>
 
-              {res.bot && recommendations.length > 0 && (
+              {res.bot && res.recommendations && res.recommendations.length > 0 && (
                 <Box className= {"bot-courses"}
                   sx={{
                     display: 'flex',
@@ -138,7 +143,7 @@ export default function ChatInterface() {
                   }}
                 >
                   <Collapse in={true} sx={{ mb: 2 }}>
-                    <CardDeck cards={recommendations} />
+                    <CardDeck cards={res.recommendations} />
                   </Collapse>
                 </Box>
               )}

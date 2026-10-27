@@ -259,7 +259,7 @@ const Dashboard = () => {
   const [about, setAbout] = useState<string>("");
 
   useEffect(() => {
-      setProfileInfoIfLoggedIn(
+      return setProfileInfoIfLoggedIn(
         setMajors,
         setMinors,
         setYear,
