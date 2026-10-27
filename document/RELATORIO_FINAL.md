@@ -4,11 +4,11 @@ Data: 27/10/2026. Versão inicial: `01bd2692d02aeee5bb008b08ebcb2e9c19785b9b`. B
 
 ## Resumo para gestão
 
-A API, a interface e a infraestrutura local foram analisadas contra o escopo do desafio. Cinco comportamentos de risco foram reproduzidos na versão inicial com requisições controladas e integrações externas simuladas. A análise abrange exposição de credenciais, divulgação de detalhes internos, configuração de navegador e consumo excessivo de recursos. Os cinco foram corrigidos; os mesmos testes após a mudança rejeitam as entradas indevidas. O fluxo de catálogo e a interface podem ser executados em Docker sem credenciais externas. O CRUD de cursos próprios foi acrescentado com separação por usuário verificado; sua integração real com Firebase ainda depende de um projeto de teste confirmado.
+A API, a interface e a infraestrutura local foram analisadas contra o escopo do desafio. Cinco comportamentos de risco foram reproduzidos na versão inicial com requisições controladas e integrações externas simuladas. A análise abrange exposição de credenciais, divulgação de detalhes internos, configuração de navegador e consumo excessivo de recursos. Os cinco foram corrigidos; os mesmos testes após a mudança rejeitam as entradas indevidas. O fluxo de catálogo e a interface podem ser executados em Docker sem credenciais externas. O CRUD de cursos próprios foi acrescentado com separação por usuário verificado. Após autorização explícita, cadastro, login, perfil, CRUD e chat passaram em um ensaio real com duas contas fictícias removidas ao final.
 
 A operação local agora inclui duas instâncias de API, gateway Nginx, Prometheus e Grafana. Doze requisições de catálogo chegaram às duas instâncias (8 e 4). A retirada controlada de uma instância evidenciou uma falha inicial de timeout; após ajustar o proxy, seis novas requisições passaram pela instância restante. Isso demonstra recuperação no cenário testado, não alta disponibilidade de produção. O gateway, o host Docker e os serviços externos continuam pontos de risco.
 
-Prioridades seguintes: validar autenticação e CRUD com duas contas em Firebase de teste; validar recomendação com OpenAI, Pinecone e cache de embeddings de teste; configurar limites e observabilidade em uma implantação real; calibrar os SLOs com tráfego. Nenhuma escrita foi feita nos projetos externos presentes nos arquivos `.env` locais porque os identificadores não confirmavam isolamento.
+Prioridades seguintes: revisar regras e permissões efetivas do Firebase, configurar limites e observabilidade em uma implantação real, calibrar os SLOs com tráfego e testar o login pelo navegador. A execução externa ocorreu somente após autorização explícita; foram criadas duas contas fictícias e removidas com seus dados ao final.
 
 ## Método e escopo
 
@@ -16,8 +16,9 @@ Prioridades seguintes: validar autenticação e CRUD com duas contas em Firebase
 2. Leitura de rotas, serviços, modelos, frontend, configuração e fronteiras de confiança. Sondas HTTP com cliente Flask e `unittest.mock` para Firebase, OpenAI e Pinecone. Entradas fictícias e sentinelas, sem tokens reais.
 3. Repetição das mesmas sondas após as correções, teste de regressão do fluxo legítimo, build de frontend, análise de dependências via `npm audit --omit=dev` e smoke tests da stack Docker.
 4. Revisão de logs, métricas, distribuição e comportamento diante da parada de uma API.
+5. Após autorização específica, execução com os `.env` locais: consulta real à OpenAI e Pinecone, conectividade Firebase e fluxo de duas contas fictícias com limpeza posterior.
 
-A sonda prova o comportamento da camada Flask e das validações em cada versão. Os mocks impedem inferir a configuração das regras Firebase ou a disponibilidade real de OpenAI/Pinecone. O catálogo SQLite foi lido localmente. Não houve teste de intrusão contra contas ou dados de terceiros.
+A sonda prova o comportamento da camada Flask e das validações em cada versão. Os mocks isolam a prova dos achados históricos. O ensaio posterior confirmou conectividade real com Firebase, OpenAI e Pinecone e separação de cursos de duas contas fictícias. Ele não substitui auditoria das regras Firebase nem prova disponibilidade contínua. O catálogo SQLite foi lido localmente. Não houve teste de intrusão contra contas ou dados de terceiros.
 
 ## Superfície e fronteiras
 
@@ -92,7 +93,15 @@ A auditoria online de dependências **de produção** do frontend começou com 2
 | Gateway ou host Docker único | Aplicação inteira fica indisponível. | Em produção, múltiplas réplicas em hosts distintos e balanceador gerenciado com probes. |
 | Rate limit local ao Nginx | Limite perde consistência em múltiplos gateways. | Armazenamento compartilhado para quotas e política de IP confiável. |
 
-A interface foi aberta no navegador; a pergunta fictícia chegou a `POST /users/query` (backend-a, 502 esperado sem OpenAI), exibindo erro estável (`document/evidence/browser-flow.txt`). O catálogo respondeu pelo gateway; login real, CRUD Firebase real e recomendação ponta a ponta **não foram validados** porque não havia garantia de projetos externos de teste. O cache FastEmbed necessário para recomendação não é empacotado na imagem padrão. Não há deploy em nuvem nem cluster Kubernetes. O desenho dessas opções está em `document/THREAT_MODEL_E_RESILIENCIA.md`.
+A interface foi aberta no navegador; a pergunta fictícia chegou a `POST /users/query` (backend-a, 502 esperado sem OpenAI), exibindo erro estável (`document/evidence/browser-flow.txt`). O catálogo respondeu pelo gateway. O ensaio posterior validou login por Firebase Auth REST, CRUD Firebase real e recomendação com três cursos; o login interativo no navegador ainda depende de teste manual pelo usuário. O cache FastEmbed é montado a partir do workspace no override local, não empacotado na imagem padrão. Não há deploy em nuvem nem cluster Kubernetes. O desenho dessas opções está em `document/THREAT_MODEL_E_RESILIENCIA.md`.
+
+## Validação integrada com serviços externos autorizados
+
+A stack foi reconstruída com `backend/.env`, `frontend/.env` e o cache FastEmbed local, por meio de `.env.compose.local.yaml` (ignorado pelo Git). O bundle contém o projeto Firebase configurado, e as duas APIs receberam as variáveis necessárias sem expor seus valores. `/health`, `/ready`, catálogo, Prometheus e Grafana responderam 200; as duas APIs estavam saudáveis e foram coletadas pelo Prometheus.
+
+Uma pergunta fictícia de código de curso respondeu 200 após consulta à OpenAI e leitura do SQLite. Outra pergunta fictícia de recomendação respondeu 200 com três cursos, usando OpenAI, FastEmbed local e leitura Pinecone. O cache gerou vetores de 384 dimensões. Não foi feita carga ou alteração do índice Pinecone.
+
+Duas contas descartáveis foram criadas pela rota de cadastro e autenticadas com Firebase Auth. Com seus tokens, o teste verificou perfil, CRUD de curso próprio e chat. A segunda conta recebeu 404 ao tentar ler, alterar ou excluir o curso da primeira. As duas contas e seus caminhos de dados foram removidos ao final. A saída contém somente códigos HTTP e resultados de limpeza em `document/evidence/live-integration-smoke.txt`; resumo em `document/evidence/live-provider-smoke.txt`. Isso valida o caminho integrado exercitado, mas não testa todas as regras Firebase nem a interface de login visualmente.
 
 ## Comandos essenciais de reprodução
 
@@ -115,7 +124,7 @@ npm run build
 npm audit --omit=dev --audit-level=high
 ```
 
-Para distribuição, repita GET de catálogo e confira `X-Instance-ID`; para falha, pare apenas uma instância local e repita GET, depois restaure-a. Não use esses comandos de falha contra produção. Arquivos `document/evidence/` contêm resultados sanitizados. As decisões D01–D21, inclusive alternativas e pressupostos, estão em `document/DECISOES.md`.
+Para distribuição, repita GET de catálogo e confira `X-Instance-ID`; para falha, pare apenas uma instância local e repita GET, depois restaure-a. Não use esses comandos de falha contra produção. Arquivos `document/evidence/` contêm resultados sanitizados. As decisões D01–D22, inclusive alternativas e pressupostos, estão em `document/DECISOES.md`.
 
 ## Histórico da entrega
 
@@ -125,4 +134,4 @@ Para distribuição, repita GET de catálogo e confira `X-Instance-ID`; para fal
 
 ## Estado de publicação
 
-Os três commits estão apenas na branch local `codex/appsec-sre`; o `git push` para `github.com/Alcristi/CourseSphere` foi rejeitado pela revisão automática por ser uma publicação pública de código e evidências sem autorização específica do payload/destino. O remoto já é público e `origin/main` coincide com o commit-base. Os arquivos `.env` não estão no índice; a comparação dos valores sensíveis locais com os arquivos preparados não encontrou correspondências. Após a revisão automática bloquear o envio, o usuário decidiu manter a branch apenas local. A atividade 50 e o requisito de entrega pública não foram concluídos por essa decisão. A análise local, os testes, o Docker e a documentação estão concluídos.
+Os commits estão apenas na branch local `codex/appsec-sre`; o `git push` para `github.com/Alcristi/CourseSphere` foi rejeitado pela revisão automática por ser uma publicação pública de código e evidências sem autorização específica do payload/destino. O remoto já é público e `origin/main` coincide com o commit-base. Os arquivos `.env` não estão no índice; a comparação dos valores sensíveis locais com os arquivos preparados não encontrou correspondências. Após a revisão automática bloquear o envio, o usuário decidiu manter a branch apenas local. A atividade 50 e o requisito de entrega pública não foram concluídos por essa decisão. A análise local, os testes simulados e integrados, o Docker e a documentação estão concluídos.

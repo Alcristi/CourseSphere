@@ -4,10 +4,10 @@ Fonte: PDF **Desafio Técnico — AppSec & SRE (Segurança e Confiabilidade)**, 
 
 ## Condição de escopo
 
-- [ ] A aplicação cobre **autenticação, CRUD de cursos/aulas e consumo de API**. Rails + React é sugestão; outra stack equivalente é aceita se cobrir esses fluxos.
+- [x] A aplicação cobre **autenticação, CRUD de cursos/aulas e consumo de API**. Rails + React é sugestão; outra stack equivalente é aceita se cobrir esses fluxos.
 - [x] Versão/commit analisado e fluxos testados estão identificados no relatório.
 
-**Estado final:** Flask + React cobre autenticação, consumo de API e CRUD de cursos próprios em `/my/courses`; catálogo público em `/courses` permanece somente leitura. O CRUD foi verificado com duas identidades e persistência simulada, sem integração Firebase real por falta de projeto de teste confirmado.
+**Estado final:** Flask + React cobre autenticação, consumo de API e CRUD de cursos próprios em `/my/courses`; catálogo público em `/courses` permanece somente leitura. O CRUD foi verificado inicialmente com mocks e depois com duas contas descartáveis no Firebase configurado, por autorização explícita; houve limpeza dos dados e contas após o ensaio.
 
 ## Obrigatório — precisa funcionar e ter prova observada
 

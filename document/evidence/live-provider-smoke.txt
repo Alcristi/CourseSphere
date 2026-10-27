@@ -1,0 +1,11 @@
+Live integration smoke, 27/10/2026, local Compose with authorized backend/.env and frontend/.env.
+Both backend instances and frontend: healthy. Gateway, Prometheus, Grafana: running.
+GET frontend, /health, /ready, /courses: HTTP 200.
+Frontend bundle contains configured Firebase project: true (value omitted).
+Both backend instances have required Firebase/OpenAI/Pinecone variables: true (values omitted).
+Firebase Admin read-only connectivity: success.
+POST /users/query "What is CS 1110?": HTTP 200, backend-a, 7.9 s; catalog answer.
+POST /users/query "Recommend a beginner course about machine learning.": HTTP 200, backend-a, 5.99 s; 3 recommendations. This exercised OpenAI, local FastEmbed cache and Pinecone read.
+Two disposable Firebase accounts: signup 200 each, password login 200 each, profile write/read 200, user course create 201/read 200/update 200/delete 204, chat write/read/delete 200. Cross-user course read/update/delete: 404. Both accounts and their Realtime Database paths removed successfully. Detailed status-only output: live-integration-smoke.txt.
+Eight additional catalog GETs: backend-a 3, backend-b 5; all HTTP 200. Prometheus targets backend_a and backend_b: up.
+No tokens, passwords, API keys, account emails, UIDs or private data are stored in this evidence.

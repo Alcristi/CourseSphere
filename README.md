@@ -6,7 +6,7 @@ Aplicação React/Vite e API Flask para consultar catálogo de cursos, recomenda
 
 - Docker Engine com Compose v2 para a demonstração local. Portas locais 8080, 9090 e 3001 disponíveis.
 - Para execução sem Docker: Python 3.12, Node.js 24 e npm. Instale dependências em ambiente virtual e com `npm ci`.
-- A stack padrão **não** usa credenciais locais de Firebase, OpenAI ou Pinecone. O catálogo público, saúde, logs, métricas e balanceamento funcionam sem elas. Login, CRUD remoto e recomendações reais precisam de projetos e contas de **teste** confirmados.
+- A stack padrão **não** usa credenciais locais de Firebase, OpenAI ou Pinecone. O catálogo público, saúde, logs, métricas e balanceamento funcionam sem elas. Login, CRUD remoto e recomendações reais exigem configuração externa autorizada; a seção de execução integrada descreve o ensaio realizado com contas descartáveis.
 - `backend/.env` e `frontend/.env` são ignorados pelo Git. Nunca coloque chaves Admin em `VITE_*`: elas são incorporadas ao bundle público. Consulte `backend/analysis.env.example` e `frontend/analysis.env.example`. Não execute cargas `--apply` contra projetos não verificados.
 
 ## Subir a stack local
@@ -31,9 +31,21 @@ Para usar serviços externos **somente com um projeto de teste confirmado**, cri
 docker compose -f compose.yaml -f compose.test-env.yaml up -d --build
 ```
 
-Configure `VITE_FIREBASE_*` do mesmo projeto **antes do build**, por exemplo via ambiente do shell, e confira o destino. O frontend recebe esses valores em tempo de compilação. O modelo FastEmbed `BAAI/bge-small-en-v1.5` precisa estar disponível no cache configurado por `EMBEDDING_CACHE_DIR` para recomendações; a imagem padrão não o contém. O Pinecone requer um índice de teste de 384 dimensões. Os serviços externos e regras Firebase não foram validados nesta entrega.
+Configure `VITE_FIREBASE_*` do mesmo projeto **antes do build**, por exemplo via ambiente do shell, e confira o destino. O frontend recebe esses valores em tempo de compilação. O modelo FastEmbed `BAAI/bge-small-en-v1.5` precisa estar disponível no cache configurado por `EMBEDDING_CACHE_DIR` para recomendações; a imagem padrão não o contém. O Pinecone requer um índice de teste de 384 dimensões. A conexão com Firebase, OpenAI e Pinecone foi validada no ensaio local autorizado descrito abaixo; as regras Firebase ainda exigem revisão própria.
 
 Para encerrar a demonstração, `docker compose down` preserva os volumes de métricas e Grafana. `docker compose down -v` também apaga esses volumes; use apenas se quiser descartar os dados locais da demonstração.
+
+## Execução integrada local com credenciais autorizadas
+
+No workspace desta análise, `.env.compose.local.yaml` está presente e ignorado pelo Git. Ele injeta `backend/.env` nas duas APIs e monta `.venv/fastembed-cache` como somente leitura. O arquivo não contém valores de segredos. Após confirmar o destino das credenciais e aceitar possíveis custos, inicie com:
+
+```bash
+docker compose --env-file frontend/.env -f compose.yaml -f .env.compose.local.yaml up -d --build
+docker compose --env-file frontend/.env -f compose.yaml -f .env.compose.local.yaml restart gateway
+docker compose --env-file frontend/.env -f compose.yaml -f .env.compose.local.yaml ps
+```
+
+O build do frontend incorpora a configuração Web de `frontend/.env`; o backend recebe somente as variáveis de `backend/.env`. O ensaio autorizado em 27/10/2026 confirmou cadastro e login de duas contas descartáveis, perfil, CRUD de cursos e chat, além de consulta real a OpenAI/Pinecone. As contas e seus dados foram excluídos após o teste. Consulte `document/evidence/live-provider-smoke.txt` e `document/evidence/live-integration-smoke.txt`. Para testar a interface, abra `http://127.0.0.1:8080` e use uma conta sua ou crie uma conta de teste; os dados criados por você permanecem no Firebase até serem removidos.
 
 ## Executar separadamente
 
@@ -98,4 +110,4 @@ Evidência capturada: `document/evidence/load-balancer.txt` e `document/evidence
 
 ## Limites conhecidos
 
-A verificação automática de CRUD usa duas identidades fictícias e armazenamento simulado. Login real, regras Firebase, recomendação real e deploy em nuvem aguardam ambiente externo isolado confirmado. O gateway/host Docker são pontos únicos de falha. Os SLOs são propostas, sem histórico suficiente para verificar cumprimento. Consulte [observabilidade](document/OBSERVABILIDADE.md) e [modelo de ameaças e resiliência](document/THREAT_MODEL_E_RESILIENCIA.md).
+A regressão automática usa identidades e armazenamento simulados; um ensaio posterior confirmou login Firebase, CRUD e recomendação reais com duas contas descartáveis. A interface de login não foi automatizada no navegador, as regras Firebase não foram auditadas e não houve deploy em nuvem. O gateway/host Docker são pontos únicos de falha. Os SLOs são propostas, sem histórico suficiente para verificar cumprimento. Consulte [observabilidade](document/OBSERVABILIDADE.md) e [modelo de ameaças e resiliência](document/THREAT_MODEL_E_RESILIENCIA.md).
