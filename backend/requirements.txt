@@ -3,3 +3,6 @@ flask
 flask-cors
 openai
 pandas
+fastembed
+pinecone
+python-dotenv

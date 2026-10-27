@@ -1,4 +1,5 @@
 *config.json
+*credentials.json*
 
 *.idea*
 *.vscode*
@@ -6,3 +7,11 @@
 *.db*
 
 .DS_Store
+
+__pycache__/
+*.py[cod]
+
+.env
+.env.*
+!.env.example
+*key.json
