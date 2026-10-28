@@ -30,7 +30,7 @@ Fonte: PDF **Desafio Técnico — AppSec & SRE (Segurança e Confiabilidade)**, 
 | - [x] Relatório | **Markdown ou PDF** com escopo, metodologia, achados e severidades, evidências (prints, logs ou requisições/respostas), recomendações priorizadas, causa raiz e solução das correções. Compreensível para equipe técnica e gestão, incluindo risco de negócio. |
 | - [x] Confiabilidade | Seção do relatório com SLIs/SLOs, principais riscos de disponibilidade da arquitetura e recomendações de resiliência. |
 | - [x] README | Como rodar a aplicação, reproduzir os achados, quais ferramentas foram usadas e como executá-las. Se houver ambiente Docker, comandos para subir e acessar. |
-| - [ ] Entrega | **Repositório público no GitHub** com código analisado e corrigido, relatório técnico e README. Sem segredos ou dados reais nas evidências. Prazo: o definido no edital; o PDF não traz data. |
+| - [x] Entrega | **Repositório público no GitHub** com código analisado e corrigido, relatório técnico e README na branch `codex/appsec-sre`. Sem segredos ou dados reais nas evidências. Prazo: o definido no edital; o PDF não traz data. |
 
 ## Recomendado
 

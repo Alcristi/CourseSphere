@@ -40,4 +40,4 @@ Foi criada a branch `codex/appsec-sre` com Git dentro do WSL, sem limpar ou sobr
 
 ## Histórico preservado
 
-A branch local `codex/appsec-sre` contém três commits: `233a115` (correções), `f31baa9` (infraestrutura) e o commit final de documentação. `git status --porcelain=v1` ficou vazio após o commit, e `origin/main` continuou em `01bd2692d02aeee5bb008b08ebcb2e9c19785b9b`. A revisão automática bloqueou a publicação; o usuário decidiu manter a branch somente local.
+O histórico foi preservado na branch `codex/appsec-sre`, começando em `01bd2692d02aeee5bb008b08ebcb2e9c19785b9b`. Houve uma primeira tentativa de publicação bloqueada pela revisão automática, seguida da decisão de manter a branch local naquele momento. Posteriormente, o usuário pediu explicitamente para fazer commit e subir; após conferir o destino e o conteúdo, a branch foi publicada no repositório público `Alcristi/CourseSphere`. `main` permaneceu no commit-base.

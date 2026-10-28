@@ -132,7 +132,8 @@ Para distribuição, repita GET de catálogo e confira `X-Instance-ID`; para fal
 - `f31baa9` — Docker/Compose, duas instâncias, gateway, Prometheus, Grafana, alertas e CI.
 - `f669d55` — achados, decisões e evidências reproduzíveis.
 - `4f588f8` — registro do ensaio integrado autorizado.
+- `5b74bf3` — instruções finais de reprodução e checklist.
 
 ## Estado de publicação
 
-Os commits estão apenas na branch local `codex/appsec-sre`; o `git push` para `github.com/Alcristi/CourseSphere` foi rejeitado pela revisão automática por ser uma publicação pública de código e evidências sem autorização específica do payload/destino. O remoto já é público e `origin/main` coincide com o commit-base. Os arquivos `.env` não estão no índice; a comparação dos valores sensíveis locais com os arquivos preparados não encontrou correspondências. Após a revisão automática bloquear o envio, o usuário decidiu manter a branch apenas local. A atividade 50 e o requisito de entrega pública não foram concluídos por essa decisão. A análise local, os testes simulados e integrados, o Docker e a documentação estão concluídos.
+A branch `codex/appsec-sre` foi publicada no repositório público [Alcristi/CourseSphere](https://github.com/Alcristi/CourseSphere/tree/codex/appsec-sre) após pedido explícito do usuário para fazer commit e subir. O destino foi conferido pela conexão GitHub: pertence à conta conectada, e o commit-base local existe em `origin/main`. Os arquivos `.env` locais não estão no índice; os exemplos versionados usam valores fictícios. A publicação foi confirmada pela presença do commit `5b74bf3` no GitHub. A branch contém código, relatório, evidências e README; `main` permanece no commit-base até eventual integração.
