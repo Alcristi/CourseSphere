@@ -1,5 +1,4 @@
 """User account and profile rules."""
-
 from models.firebase_model import Firebase
 
 
@@ -10,7 +9,12 @@ class UserService:
 
     @staticmethod
     def user_id(id_token):
-        return Firebase.verify_id_token(id_token).get("uid")
+        if not isinstance(id_token, str) or not id_token:
+            raise ValueError("Authorization token required")
+        uid = Firebase.verify_id_token(id_token).get("uid")
+        if not isinstance(uid, str) or not uid:
+            raise ValueError("Verified token has no user ID")
+        return uid
 
     @classmethod
     def save_profile(cls, id_token, profile):
@@ -24,6 +28,8 @@ class UserService:
 
     @staticmethod
     def optional_profile(id_token):
+        if not id_token:
+            return None
         try:
             return Firebase.get_user_info(Firebase.verify_id_token(id_token).get("uid"))
         except Exception:

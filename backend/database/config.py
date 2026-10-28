@@ -10,7 +10,7 @@ PROJECT_ROOT = BACKEND_ROOT.parent
 load_dotenv(BACKEND_ROOT / ".env", override=False)
 
 COURSES_DB = Path(__file__).resolve().parent / "roster_reviews.sqlite.db"
-EMBEDDING_CACHE = PROJECT_ROOT / ".venv" / "fastembed-cache"
+EMBEDDING_CACHE = Path(os.getenv("EMBEDDING_CACHE_DIR", str(PROJECT_ROOT / ".venv" / "fastembed-cache")))
 
 
 def required_env(name: str) -> str:

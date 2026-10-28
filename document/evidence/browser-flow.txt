@@ -1,0 +1,4 @@
+Navegador local em http://127.0.0.1:8080/ (27/10/2026): página CourseSphere renderizada com Home, Dashboard, Login e entrada de mensagem. Enviada pergunta fictícia `test course` sem login. Interface exibiu `Search failed: Recommendation is temporarily unavailable`. Log JSON correlacionado na instância backend-a:
+{"event":"query_failed","instance":"backend-a","request_id":"2c49839d-12ed-6c47-657b-b33d5de2d98a","error_type":"RuntimeError"}
+{"event":"request","instance":"backend-a","request_id":"2c49839d-12ed-6c47-657b-b33d5de2d98a","method":"POST","route":"/users/query","status":502,"duration_ms":2.86}
+O Compose padrão não possui credenciais OpenAI, portanto 502 era esperado; não houve chamada externa. A ação prova navegador → gateway → API, e a mensagem estável de erro. Não prova recomendação real.

@@ -1,54 +1,31 @@
-# Arquitetura do backend CourseSphere
+# Arquitetura CourseSphere após a análise
 
-O backend segue **Blueprint → Service → Model**, com conexões e cargas de dados em `database/`. O ponto de entrada Flask é `backend/app.py`.
+## Componentes
 
-```text
-backend/
-├── app.py
-├── .env.example
-├── config/           # Tipos de pergunta usados na interpretação
-├── blueprints/       # Rotas HTTP e respostas
-├── services/         # Regras de negócio e integração OpenAI
-├── models/           # Operações de dados Firebase, Pinecone e SQLite
-├── database/         # Configuração, conexões e scripts de carga
-├── data/             # Fontes locais para as cargas
-└── requirements.txt
+```mermaid
+flowchart LR
+    Browser[Navegador React/Vite] --> Gateway[Nginx gateway]
+    Gateway --> APIA[Flask/Gunicorn A]
+    Gateway --> APIB[Flask/Gunicorn B]
+    APIA & APIB --> SQLite[(Catálogo SQLite na imagem)]
+    APIA & APIB --> Firebase[Firebase Auth/Realtime Database]
+    APIA & APIB --> OpenAI[OpenAI]
+    APIA & APIB --> Pinecone[Pinecone]
+    APIA & APIB --> Cache[FastEmbed cache local]
+    Prometheus --> APIA & APIB
+    Grafana --> Prometheus
 ```
 
-## Configuração
+A API segue Blueprints → Services → Models. `backend/app.py` registra rotas e observabilidade; `backend/database/config.py` carrega configuração sem sobrescrever variáveis do processo. Firebase Admin inicializa sob demanda: saúde e catálogo funcionam sem credenciais externas. `backend/database/seed_sqlite_catalog.py` gera o banco local a partir do CSV versionado durante o build da imagem. Muitos cursos têm apenas código, pois a fonte não contém detalhes completos.
 
-`database/config.py` carrega `backend/.env` sem sobrescrever variáveis do processo. `firebase_connection.py` monta a credencial Admin a partir de campos privados do ambiente; o frontend lê apenas os valores públicos `VITE_FIREBASE_*` de `frontend/.env`. Os arquivos `.env` não entram no Git.
+## Identidade, dados e rotas
 
-Os endpoints de perfil recebem o Firebase ID token no corpo da requisição ou na URL; os endpoints de chat usam `Authorization: Bearer ...`. O Firebase Admin verifica o token, e os modelos usam o `uid` verificado para acessar `users/{uid}`. A recomendação aceita usuários anônimos e recebe um token opcional no corpo da requisição.
+O navegador obtém um Firebase ID token e envia `Authorization: Bearer` nas rotas autenticadas. A API verifica o token pelo Admin SDK e usa o UID verificado para acessar perfil, chats e `users/{uid}/courses`. A API nunca aceita um UID do corpo para escolher o caminho. O CRUD de cursos próprios em `/my/courses` é separado do catálogo público SQLite em `/courses`, que é somente leitura. A recomendação em `POST /users/query` pode ser anônima, aceita token opcional no cabeçalho e consulta OpenAI; na busca semântica gera embeddings locais e consulta Pinecone. Perguntas sobre major/minor/professor continuam sem catálogo verificado.
 
-A configuração do Firebase no navegador continua visível após o build; a proteção de dados depende das regras do Firebase e da verificação de tokens no backend. O endpoint anônimo de recomendação ainda precisa de limite de requisições antes de exposição pública.
+A interface usa URLs relativas. Em desenvolvimento o Vite encaminha rotas da API ao backend configurado por `BACKEND_PROXY_TARGET` (padrão `http://127.0.0.1:5000`). No Compose, Nginx serve a interface e distribui chamadas de API entre duas instâncias. Prometheus coleta `/metrics` diretamente na rede Docker; Grafana lê o Prometheus. `/health` testa processo e `/ready` consulta SQLite. O gateway não publica `/metrics`.
 
-## API de cursos
+## Configuração e limites
 
-`backend/blueprints/courses.py` expõe consultas ao catálogo SQLite por meio de `CourseCatalogService` e `CourseCatalogModel`. `GET /courses` retorna até 100 registros por padrão; `limit` aceita de 1 a 500 e `offset` inicia em 0. Também aceita os filtros `section_id`, `semester`, `department` e `instructor` como parâmetros de consulta.
+O Compose padrão não injeta `.env` do backend e usa valores Firebase Web fictícios no build. `compose.test-env.yaml` é um override para projetos externos de teste confirmados. `VITE_*` são públicos no bundle; chaves Admin e APIs externas ficam só no backend. O modelo FastEmbed usa cache local (`EMBEDDING_CACHE_DIR`) e `local_files_only=True`; o cache precisa ser preparado para recomendações reais. O banco local é gerado na imagem; para novos dados de catálogo, refaça a imagem. Os dados de usuário persistem no Firebase remoto.
 
-`GET /courses/<id>` consulta a chave numérica do banco. `GET /courses/description/<id>` retorna `estimated_description` e `description_basis` quando o enriquecimento local foi aplicado. Os caminhos `bysection`, `bysemester`, `bydepartment` e `byinstructor` oferecem os mesmos filtros de forma explícita; o antigo formato genérico `/courses/<texto>` era ambíguo. Uma lista vazia é retornada quando não há correspondências, e a API responde 503 quando o banco ainda não foi criado.
-
-As fontes locais contêm apenas códigos para muitos cursos. Títulos, descrições estimadas, seções, semestres e instrutores podem estar ausentes; a API não inventa esses dados.
-
-## Tipos de pergunta
-
-`backend/config/query_types.json` define os tipos de pergunta e os parâmetros esperados. `RecommendationService` usa esse catálogo no prompt e valida o tipo retornado. Recomendações de cursos seguem para a busca semântica; perguntas por código consultam o catálogo SQLite. Perguntas sobre major, minor e professor recebem uma resposta de indisponibilidade enquanto não há catálogos verificados para essas categorias.
-
-## Fluxo da recomendação
-
-1. `POST /users/query` recebe `query`, `history` e opcionalmente um token no corpo da requisição.
-2. `RecommendationService` consulta o perfil autenticado e usa OpenAI para interpretar a pergunta.
-3. `EmbeddingService` transforma as frases de busca em vetores.
-4. `CourseModel` consulta o Pinecone e busca detalhes de cursos no SQLite.
-5. `RecommendationService` seleciona até três cursos distintos e monta a resposta.
-
-## Execução e cargas
-
-A partir de `backend/`, instale `requirements.txt` e execute `python app.py`. Os comandos de carga são independentes da API:
-
-- `python -m database.seed_sqlite_catalog` cria a base SQLite a partir dos dados locais.
-- `python -m database.seed_sqlite_enrichment` inspeciona títulos e avaliações; `--apply` grava os enriquecimentos após fazer backup.
-- `python -m database.seed_courses` inspeciona os cursos para o índice Pinecone; `--apply` grava os vetores.
-
-O SQLite fica em `backend/database/roster_reviews.sqlite.db`. O modelo de embeddings precisa estar no cache local porque as consultas usam `local_files_only=True`.
+Veja [relatório final](RELATORIO_FINAL.md), [observabilidade](OBSERVABILIDADE.md) e [modelo de ameaças](THREAT_MODEL_E_RESILIENCIA.md) para evidências, risco e decisões.

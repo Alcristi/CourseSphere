@@ -1,0 +1,24 @@
+{
+  "cors_untrusted_origin": {
+    "allowed": true,
+    "status": 200
+  },
+  "internal_error_leak": {
+    "sentinel_in_body": true,
+    "status": 400
+  },
+  "token_in_url": {
+    "accepted": true,
+    "status": 200
+  },
+  "unbounded_chat_write": {
+    "accepted": true,
+    "messages": 501,
+    "status": 200
+  },
+  "unbounded_query_history": {
+    "accepted": true,
+    "history_chars": 200000,
+    "status": 200
+  }
+}

@@ -1,0 +1,13 @@
+Final local smoke after rebuilding images (27/10/2026):
+frontend / -> 200
+GET /health -> 200, backend-a
+GET /ready -> 200, backend-a
+GET /courses?limit=1 -> 200, backend-a
+GET /metrics through gateway -> 404
+Prometheus /-/healthy -> 200
+Grafana /api/health -> 200
+Prometheus targets: backend_a:5000 up; backend_b:5000 up
+Prometheus rules: group coursesphere, 3 loaded
+promtool check rules /etc/prometheus/alerts.yml -> SUCCESS: 3 rules found
+promtool check config /etc/prometheus/prometheus.yml -> SUCCESS
+promtool test rules /etc/prometheus/alerts.test.yml -> SUCCESS (backend-b down synthetic series)

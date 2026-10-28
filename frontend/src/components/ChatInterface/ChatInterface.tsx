@@ -2,7 +2,7 @@ import { useState, ChangeEvent, FormEvent, useRef, useEffect } from 'react';
 import { IconButton, Box, Typography, Container, InputBase, Collapse } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import CardDeck from '../DeckOfCards/CardDeck';
-import { fetchCourseSphereResponse, saveCourseSphereChat, h} from "../../api";
+import { fetchCourseSphereResponse, saveCourseSphereChat} from "../../api";
 import './ChatInterface.scss';
 
 
@@ -14,12 +14,10 @@ interface Response {
 }
 
 
-const BATCH_SIZE = 5;  
-
 export default function ChatInterface() {
   const [query, setQuery] = useState<string>('');
   const [responses, setResponses] = useState<Response[]>([]);
-  const [batch, setBatch] = useState<Message[]>([]);
+  const chatIdRef = useRef<string>(crypto.randomUUID());
   const chatWindowRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -27,19 +25,6 @@ export default function ChatInterface() {
       chatWindowRef.current.scrollTop = chatWindowRef.current.scrollHeight;
     }
   }, [responses]);
-
-  useEffect(() => {
-    const handleBeforeUnload = async () => {
-      if (batch.length > 0) {
-        const chatId = "someUniqueChatId";  // Replace with appropriate chatId
-        await saveCourseSphereChat(chatId, batch);
-      }
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, [batch]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -49,7 +34,7 @@ export default function ChatInterface() {
     const userMessage: Message = {
       sender: 'user',
       content: query,
-      messageID: h(query),
+      messageID: crypto.randomUUID(),
       timestamp: new Date().toISOString(),
     };
 
@@ -58,25 +43,18 @@ export default function ChatInterface() {
         ...(response.user ? [{ role: 'user' as const, content: response.user }] : []),
         ...(response.bot ? [{ role: 'assistant' as const, content: response.bot }] : []),
       ]);
-      const { botResponse, newRecommendations } = await fetchCourseSphereResponse(query, history);
+      const { botResponse, newRecommendations } = await fetchCourseSphereResponse(query, history.slice(-8).map((item) => ({ ...item, content: item.content.slice(0, 2000) })));
       const botMessage: Message = {
-        sender: 'bot',
-        content: { botResponse, newRecommendations },
-        messageID: h({botResponse, newRecommendations}),
+        sender: 'assistant',
+        content: botResponse.slice(0, 4000),
+        messageID: crypto.randomUUID(),
         timestamp: new Date().toISOString(),
       };
 
       const updatedResponses: Response[] = [...newResponses, { bot: botResponse, recommendations: newRecommendations }];
       setResponses(updatedResponses);
 
-      const newBatch = [...batch, userMessage, botMessage];
-      setBatch(newBatch);
-
-      if (newBatch.length >= BATCH_SIZE) { 
-        const chatId = "someUniqueChatId";  
-        await saveCourseSphereChat(chatId, newBatch);
-        setBatch([]);
-      }
+      await saveCourseSphereChat(chatIdRef.current, [userMessage, botMessage]);
     } catch (error) {
       console.error('Error fetching bot response:', error);
       const message = error instanceof Error ? error.message : String(error);
@@ -89,7 +67,7 @@ export default function ChatInterface() {
     return user ? "user-response" : "bot-response";
   };
   return (
-    <Container maxWidth="md" sx={{ display: 'flex',   flexDirection: 'column', alignItems: 'center', mt: 1 }}>-
+    <Container maxWidth="md" sx={{ display: 'flex',   flexDirection: 'column', alignItems: 'center', mt: 1 }}>
       <Box
         sx={{
           p: 2,
@@ -185,12 +163,13 @@ export default function ChatInterface() {
             fontFamily: 'inherit',
             fontSize: 'inherit',
             lineHeight: 'inherit',
-            overflowY: 'auto', 
-            maxHeight: '100px', 
+            overflowY: 'auto',
+            maxHeight: '100px',
             width: '100%',
           }}
           inputProps={{
             'aria-label': 'type message',
+            maxLength: 2000,
           }}
         />
         <IconButton type="submit" sx={{ p: '10px' }} aria-label="send">

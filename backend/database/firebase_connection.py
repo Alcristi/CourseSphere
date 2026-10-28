@@ -1,5 +1,4 @@
-"""Initialize the Firebase Admin SDK from backend environment variables."""
-
+"""Initialize Firebase only when an authenticated operation needs it."""
 import firebase_admin
 from firebase_admin import auth, credentials, db
 
@@ -22,9 +21,22 @@ def _service_account_from_env():
     }
 
 
-firebase_credentials = credentials.Certificate(_service_account_from_env())
-database_url = required_env("FIREBASE_DATABASE_URL")
-try:
-    firebase_app = firebase_admin.get_app()
-except ValueError:
-    firebase_app = firebase_admin.initialize_app(firebase_credentials, {"databaseURL": database_url})
+def firebase_app():
+    try:
+        return firebase_admin.get_app()
+    except ValueError:
+        certificate = credentials.Certificate(_service_account_from_env())
+        return firebase_admin.initialize_app(
+            certificate,
+            {"databaseURL": required_env("FIREBASE_DATABASE_URL")},
+        )
+
+
+def get_auth():
+    firebase_app()
+    return auth
+
+
+def get_db():
+    firebase_app()
+    return db

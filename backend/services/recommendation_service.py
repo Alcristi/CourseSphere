@@ -47,7 +47,7 @@ class RecommendationService:
 
     def understand_query(self):
         if self.client is None:
-            self.client = OpenAI(api_key=required_env("OPENAI_API_KEY"))
+            self.client = OpenAI(api_key=required_env("OPENAI_API_KEY"), timeout=12.0, max_retries=0)
 
         prompt = f"""You are an academic advisor at Cornell. Classify the student's latest
 question using the previous messages and profile. Return only a JSON object.

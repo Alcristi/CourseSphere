@@ -8,27 +8,28 @@ import Footer from "./components/Footer/Footer";
 import Header from "./components/header/Header";
 import firebaseConfig from "./firebaseConfig";
 import Dashboard from "./pages/dashboard/Dashboard";
+import MyCourses from "./pages/MyCourses";
 import Home from "./pages/home/Home";
 import Login from "./pages/login/Login";
 import SignUp from "./pages/signup/SignUp";
 
 
 const app = initializeApp(firebaseConfig);
-console.log(app.name) 
+console.log(app.name)
 
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#5c6bc0', 
+      main: '#5c6bc0',
     },
     secondary: {
-      main: '#ff4081', 
+      main: '#ff4081',
     },
   },
   typography: {
-    fontFamily: 'Roboto, Arial, sans-serif', 
+    fontFamily: 'Roboto, Arial, sans-serif',
     h1: {
-      fontSize: '2rem', 
+      fontSize: '2rem',
     },
   },
   spacing: 8,
@@ -42,6 +43,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/my-courses" element={<MyCourses />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
           </Routes>

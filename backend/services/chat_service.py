@@ -3,12 +3,13 @@
 import secrets
 
 from models.firebase_model import Firebase
+from services.user_service import UserService
 
 
 class ChatService:
     @staticmethod
     def user_id(id_token):
-        return Firebase.verify_id_token(id_token).get("uid")
+        return UserService.user_id(id_token)
 
     @classmethod
     def save_messages(cls, id_token, chat_id, messages):

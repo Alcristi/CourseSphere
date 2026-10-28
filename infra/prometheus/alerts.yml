@@ -1,0 +1,33 @@
+groups:
+  - name: coursesphere
+    rules:
+      - alert: CourseSphereBackendDown
+        expr: up{job="coursesphere"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CourseSphere backend instance is unavailable"
+          description: "Inspect readiness, gateway upstream status and logs for the affected instance."
+      - alert: CourseSphereElevated5xx
+        expr: |
+          sum(rate(coursesphere_http_requests_total{status=~"5..",route!~"/metrics|/health|/ready"}[5m]))
+          /
+          clamp_min(sum(rate(coursesphere_http_requests_total{route!~"/metrics|/health|/ready"}[5m])), 0.000001) > 0.01
+          and sum(rate(coursesphere_http_requests_total{route!~"/metrics|/health|/ready"}[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CourseSphere 5xx ratio exceeds 1%"
+          description: "Check route, instance, recent changes and external dependency health."
+      - alert: CourseSphereSlowRecommendations
+        expr: |
+          histogram_quantile(0.95, sum by (le) (rate(coursesphere_http_request_duration_seconds_bucket{route="/users/query",status=~"2.."}[5m]))) > 10
+          and sum(rate(coursesphere_http_requests_total{route="/users/query",status=~"2.."}[5m])) > 0.01
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CourseSphere recommendation p95 exceeds 10 seconds"
+          description: "Check OpenAI, Pinecone and model cache before tuning thresholds."

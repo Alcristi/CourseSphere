@@ -1,0 +1,3 @@
+targets [('backend_a:5000', 'up'), ('backend_b:5000', 'up')]
+catalog_requests [('backend_b:5000', '4'), ('backend_a:5000', '8')]
+dashboard CourseSphere — SRE panels 5
