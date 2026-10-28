@@ -63,4 +63,4 @@ Todos contam pontos extras; nenhum substitui os mínimos.
 - [x] Contagens: **5** achados, **2** categorias, **3** correções, **2** medidas de hardening, **2** SLIs com **2** SLOs, **2** instâncias de backend.
 - [x] Há prova observada dos itens que precisam **funcionar**: fluxos da aplicação, correções, hardening, logs, saúde/métricas, containers e distribuição de requisições.
 - [x] Relatório e README cobrem os itens que precisam **estar documentados**: método, reprodução, severidade e impacto, causa raiz, SLIs/SLOs, dashboard descritivo, riscos de disponibilidade, resiliência e comandos.
-- [ ] Código, relatório, README, evidências e histórico estão coerentes e permitem reprodução pela banca.
+- [x] Código, relatório, README, evidências e histórico estão coerentes e permitem reprodução pela banca; a reprodução da versão inicial usa o commit-base e a sonda versionada na branch de entrega.

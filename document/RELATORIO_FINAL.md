@@ -130,7 +130,8 @@ Para distribuição, repita GET de catálogo e confira `X-Instance-ID`; para fal
 
 - `233a115` — correções de segurança, CRUD, dependências e testes de regressão.
 - `f31baa9` — Docker/Compose, duas instâncias, gateway, Prometheus, Grafana, alertas e CI.
-- Commit de documentação e evidências: último commit da branch `codex/appsec-sre` após esta seção.
+- `f669d55` — achados, decisões e evidências reproduzíveis.
+- `4f588f8` — registro do ensaio integrado autorizado.
 
 ## Estado de publicação
 
